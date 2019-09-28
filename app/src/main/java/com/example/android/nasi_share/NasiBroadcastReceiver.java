@@ -58,7 +58,8 @@ public class NasiBroadcastReceiver extends BroadcastReceiver {
             //1 callback on PeerListListener.onPeersAvailable()
             //2 Indicates a change in the list of available peers.
             if (manager != null) {
-                manager.requestPeers(channel, (PeerListListener) );
+                manager.requestPeers(channel, (PeerListListener) fragment.getFragmentManager()
+                        .findFragmentById(R.id.frag_list));
             }
             Log.d(SearchFragment.TAG, "P2P peers changed");
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
