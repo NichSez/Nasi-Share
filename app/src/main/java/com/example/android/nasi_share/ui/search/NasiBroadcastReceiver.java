@@ -10,6 +10,7 @@ import android.net.wifi.p2p.WifiP2pManager.Channel;
 import android.net.wifi.p2p.WifiP2pManager.PeerListListener;
 import android.util.Log;
 
+
 import com.example.android.nasi_share.R;
 import com.example.android.nasi_share.ui.search.DeviceDetailFragment;
 import com.example.android.nasi_share.ui.search.DeviceListFragment;
@@ -40,6 +41,12 @@ public class NasiBroadcastReceiver extends BroadcastReceiver {
         this.fragment = fragment;
     }
 
+    /*
+     * (non-Javadoc)
+     * @see android.content.BroadcastReceiver#onReceive(android.content.Context,
+     * android.content.Intent)
+     */
+
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
@@ -66,29 +73,29 @@ public class NasiBroadcastReceiver extends BroadcastReceiver {
             }
             Log.d(SearchFragment.TAG, "P2P peers changed");
         }
-//        else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
-//            //1 Indicates the state of Wi-Fi P2P connectivity has changed.
-//            //2 Respond to new connection or disconnections
-//            if (manager == null) {
-//                return;
-//            }
-//            NetworkInfo networkInfo = (NetworkInfo) intent
-//                    .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
-//            if (networkInfo.isConnected()) {
-//                // we are connected with the other device, request connection
-//                // info to find group owner IP
-//                DeviceDetailFragment fragmentD = (DeviceDetailFragment) fragment
-//                        .getFragmentManager().findFragmentById(R.id.frag_detail);
-//                manager.requestConnectionInfo(channel, fragmentD);
-//            } else {
-//                // It's a disconnect
-//                fragment.resetData();
-//            }
-//        } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
-//            DeviceListFragment fragmentD = (DeviceListFragment) fragment.getFragmentManager()
-//                    .findFragmentById(R.id.frag_list);
-//            fragmentD.updateThisDevice((WifiP2pDevice) intent.getParcelableExtra(
-//                    WifiP2pManager.EXTRA_WIFI_P2P_DEVICE));
-//        }
+        else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
+            //1 Indicates the state of Wi-Fi P2P connectivity has changed.
+            //2 Respond to new connection or disconnections
+            if (manager == null) {
+                return;
+            }
+            NetworkInfo networkInfo = (NetworkInfo) intent
+                    .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+            if (networkInfo.isConnected()) {
+                // we are connected with the other device, request connection
+                // info to find group owner IP
+                DeviceDetailFragment fragmentD = (DeviceDetailFragment) fragment.getActivity()
+                        .getFragmentManager().findFragmentById(R.id.frag_detail);
+                manager.requestConnectionInfo(channel, fragmentD);
+            } else {
+                // It's a disconnect
+                fragment.resetData();
+            }
+        } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
+            DeviceListFragment fragmentD = (DeviceListFragment) fragment.getActivity().getFragmentManager()
+                    .findFragmentById(R.id.frag_list);
+            fragmentD.updateThisDevice((WifiP2pDevice) intent.getParcelableExtra(
+                    WifiP2pManager.EXTRA_WIFI_P2P_DEVICE));
+        }
     }
 }

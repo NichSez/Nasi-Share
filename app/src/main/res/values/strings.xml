@@ -23,5 +23,8 @@
     <string name="yes">بله</string>
     <string name="no">خیر</string>
     <string name="client_text">این دستگاه به عنوان فرستنده عمل خواهد کرد. دکمه نگارخانه را بفشارید.</string>
+    <string name="enable_p2p_button">روشن یا خاموش کردن P2P</string>
+    <string name="discover_peers_button">جستجو</string>
+    <string name="p2p_off_warning">امکان P2P را از فهرست بالای صفحه و یا در تنظیمات گوشی فعال فرمائید.</string>
 
 </resources>

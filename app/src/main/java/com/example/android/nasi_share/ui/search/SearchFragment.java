@@ -24,8 +24,21 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+
+import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProviders;
+
 import com.example.android.nasi_share.R;
 import com.example.android.nasi_share.ui.search.DeviceListFragment.DeviceActionListener;
+import com.example.android.nasi_share.ui.send.SendViewModel;
 
 import static android.os.Looper.getMainLooper;
 
@@ -39,6 +52,7 @@ import static android.os.Looper.getMainLooper;
 
 public class SearchFragment extends Fragment implements ChannelListener, DeviceActionListener {
 
+    private SearchViewModel searchViewModel;
     private boolean isWifiP2pEnabled = false;
     public static final String TAG = "nasisharedemo";
     private static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 1001;
@@ -48,6 +62,23 @@ public class SearchFragment extends Fragment implements ChannelListener, DeviceA
     private Channel channel;
     private BroadcastReceiver receiver = null;
 
+
+
+
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             ViewGroup container, Bundle savedInstanceState) {
+        searchViewModel =
+                ViewModelProviders.of(this).get(SearchViewModel.class);
+        View root = inflater.inflate(R.layout.fragment_search, container, false);
+        searchViewModel.getText().observe(this, new Observer<String>() {
+            @Override
+            public void onChanged(@Nullable String s) {
+
+            }
+        });
+        return root;
+
+    }
 
     /**
      * @param isWifiP2pEnabled the isWifiP2pEnabled to set
@@ -65,13 +96,15 @@ public class SearchFragment extends Fragment implements ChannelListener, DeviceA
             case PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION:
                 if  (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                     Log.e(TAG, "Coarse location permission is not granted!");
-                    finish();
+                    getActivity().finish();
                 }
                 break;
         }
     }
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        //for having optionMenu in this fragment
+        setHasOptionsMenu(true);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.fragment_search);
         // add necessary intent values to be matched.
@@ -79,10 +112,10 @@ public class SearchFragment extends Fragment implements ChannelListener, DeviceA
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
-        manager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
-        channel = manager.initialize(this, getMainLooper(), null);
+        manager = (WifiP2pManager) getActivity().getSystemService(Context.WIFI_P2P_SERVICE);
+        channel = manager.initialize(getContext(), getMainLooper(), null);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+                && getActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
                     SearchFragment.PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION);
@@ -99,21 +132,21 @@ public class SearchFragment extends Fragment implements ChannelListener, DeviceA
     public void onResume() {
         super.onResume();
         receiver = new NasiBroadcastReceiver(manager, channel, this);
-        registerReceiver(receiver, intentFilter);
+        getActivity().registerReceiver(receiver, intentFilter);
     }
     @Override
     public void onPause() {
         super.onPause();
-        unregisterReceiver(receiver);
+        getActivity().unregisterReceiver(receiver);
     }
     /**
      * Remove all peers and clear all fields. This is called on
      * BroadcastReceiver receiving a state change event.
      */
     public void resetData() {
-        DeviceListFragment fragmentList = (DeviceListFragment) getFragmentManager()
+        DeviceListFragment fragmentList = (DeviceListFragment) getActivity().getFragmentManager()
                 .findFragmentById(R.id.frag_list);
-        DeviceDetailFragment fragmentDetails = (DeviceDetailFragment) getFragmentManager()
+        DeviceDetailFragment fragmentDetails = (DeviceDetailFragment) getActivity().getFragmentManager()
                 .findFragmentById(R.id.frag_detail);
         if (fragmentList != null) {
             fragmentList.clearPeers();
@@ -123,10 +156,9 @@ public class SearchFragment extends Fragment implements ChannelListener, DeviceA
         }
     }
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
+    public void onCreateOptionsMenu(Menu menu,MenuInflater inflater) {
+        inflater = getActivity().getMenuInflater();
         inflater.inflate(R.menu.action_items, menu);
-        return true;
     }
     /*
      * (non-Javadoc)
@@ -147,22 +179,22 @@ public class SearchFragment extends Fragment implements ChannelListener, DeviceA
                 return true;
             case R.id.atn_direct_discover:
                 if (!isWifiP2pEnabled) {
-                    Toast.makeText(SearchFragment.this, R.string.p2p_off_warning,
+                    Toast.makeText(getContext(), R.string.p2p_off_warning,
                             Toast.LENGTH_SHORT).show();
                     return true;
                 }
-                final DeviceListFragment fragment = (DeviceListFragment) getFragmentManager()
+                final DeviceListFragment fragment = (DeviceListFragment) getActivity().getFragmentManager()
                         .findFragmentById(R.id.frag_list);
                 fragment.onInitiateDiscovery();
                 manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
                     @Override
                     public void onSuccess() {
-                        Toast.makeText(WiFiDirectActivity.this, "Discovery Initiated",
+                        Toast.makeText(getContext(), "Discovery Initiated",
                                 Toast.LENGTH_SHORT).show();
                     }
                     @Override
                     public void onFailure(int reasonCode) {
-                        Toast.makeText(WiFiDirectActivity.this, "Discovery Failed : " + reasonCode,
+                        Toast.makeText(getContext(), "Discovery Failed : " + reasonCode,
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -173,7 +205,7 @@ public class SearchFragment extends Fragment implements ChannelListener, DeviceA
     }
     @Override
     public void showDetails(WifiP2pDevice device) {
-        DeviceDetailFragment fragment = (DeviceDetailFragment) getFragmentManager()
+        DeviceDetailFragment fragment = (DeviceDetailFragment) getActivity().getFragmentManager()
                 .findFragmentById(R.id.frag_detail);
         fragment.showDetails(device);
     }
@@ -186,14 +218,14 @@ public class SearchFragment extends Fragment implements ChannelListener, DeviceA
             }
             @Override
             public void onFailure(int reason) {
-                Toast.makeText(WiFiDirectActivity.this, "Connect failed. Retry.",
+                Toast.makeText(getContext(), "Connect failed. Retry.",
                         Toast.LENGTH_SHORT).show();
             }
         });
     }
     @Override
     public void disconnect() {
-        final DeviceDetailFragment fragment = (DeviceDetailFragment) getFragmentManager()
+        final DeviceDetailFragment fragment = (DeviceDetailFragment) getActivity().getFragmentManager()
                 .findFragmentById(R.id.frag_detail);
         fragment.resetViews();
         manager.removeGroup(channel, new ActionListener() {
@@ -211,13 +243,13 @@ public class SearchFragment extends Fragment implements ChannelListener, DeviceA
     public void onChannelDisconnected() {
         // we will try once more
         if (manager != null && !retryChannel) {
-            Toast.makeText(this, "Channel lost. Trying again", Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(), "Channel lost. Trying again", Toast.LENGTH_LONG).show();
             resetData();
             retryChannel = true;
-            manager.initialize(this, getMainLooper(), this);
+            manager.initialize(getContext(), getMainLooper(), this);
         } else {
-            Toast.makeText(this,
-                    "Severe! Channel is probably lost premanently. Try Disable/Re-Enable P2P.",
+            Toast.makeText(getContext(),
+                    "Severe! Channel is probably lost permanently. Try Disable/Re-Enable P2P.",
                     Toast.LENGTH_LONG).show();
         }
     }
@@ -229,7 +261,7 @@ public class SearchFragment extends Fragment implements ChannelListener, DeviceA
          * request
          */
         if (manager != null) {
-            final DeviceListFragment fragment = (DeviceListFragment) getFragmentManager()
+            final DeviceListFragment fragment = (DeviceListFragment) getActivity().getFragmentManager()
                     .findFragmentById(R.id.frag_list);
             if (fragment.getDevice() == null
                     || fragment.getDevice().status == WifiP2pDevice.CONNECTED) {
@@ -239,12 +271,12 @@ public class SearchFragment extends Fragment implements ChannelListener, DeviceA
                 manager.cancelConnect(channel, new ActionListener() {
                     @Override
                     public void onSuccess() {
-                        Toast.makeText(WiFiDirectActivity.this, "Aborting connection",
+                        Toast.makeText(getContext(), "Aborting connection",
                                 Toast.LENGTH_SHORT).show();
                     }
                     @Override
                     public void onFailure(int reasonCode) {
-                        Toast.makeText(WiFiDirectActivity.this,
+                        Toast.makeText(getContext(),
                                 "Connect abort request failed. Reason Code: " + reasonCode,
                                 Toast.LENGTH_SHORT).show();
                     }
